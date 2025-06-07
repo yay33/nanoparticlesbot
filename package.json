@@ -1,0 +1,27 @@
+{
+  "name": "nanopredictbot",
+  "version": "1.0.0",
+  "description": "Telegram bot for predicting nanoparticle characteristics",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "chart.js": "^4.4.0",
+    "chartjs-node-canvas": "^5.0.0",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "moment": "^2.29.4",
+    "node-telegram-bot-api": "^0.66.0",
+    "pg": "^8.11.3",
+    "sequelize": "^6.35.1",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
