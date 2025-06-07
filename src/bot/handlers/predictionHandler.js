@@ -66,6 +66,10 @@ async function handlePredictionResponse(bot, msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id.toString();
   const userState = predictionState.get(userId);
+  console.log(chatId);
+  console.log(userId);
+  console.log(userState);
+
   
   // If the user is not in a prediction state, do nothing
   if (!userState || userState.state !== 'awaiting_parameters') return;
@@ -82,6 +86,7 @@ async function handlePredictionResponse(bot, msg) {
     // Parse parameters
     const parameterInput = msg.text.trim();
     const paramArray = parameterInput.split(/\s+/).map(param => param.trim());
+    console.log(paramArray);
     
     // Validate parameters
     const validationResult = validateParameters(paramArray);
@@ -96,6 +101,8 @@ async function handlePredictionResponse(bot, msg) {
     
     // Convert parameters to an object
     const parameters = convertParametersToObject(paramArray);
+    console.log(paramArray);
+    console.log(parameters);
     
     // Send "processing" message
     const processingMsg = await bot.sendMessage(
@@ -104,7 +111,7 @@ async function handlePredictionResponse(bot, msg) {
     );
     
     // Make prediction
-    const prediction = await makeModelPrediction(parameters);
+    const prediction = await makeModelPrediction(paramArray); // test
     
     // Save experiment to database
     const experiment = await Experiment.create({
@@ -117,21 +124,25 @@ async function handlePredictionResponse(bot, msg) {
     // Format parameter display
     const parameterDisplay = formatParametersForDisplay(parameters);
     
-    // Send prediction result
+    // deprecated func
+    /* function escapeMarkdownV2(text) {
+      return String(text).replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
+    } */
+    
     await bot.editMessageText(
-      `🔬 *Результаты прогнозирования*\n\n` +
-      `*Параметры синтеза:*\n${parameterDisplay}\n\n` +
-      `*Предсказанный размер частиц:* ${prediction.size.toFixed(1)} нм\n` +
-      `*Предсказанный PdI:* ${prediction.pdi.toFixed(3)}\n` +
-      `*Точность прогноза (R²):* ~${(prediction.sizeConfidence * 100).toFixed(0)}% / ${(prediction.pdiConfidence * 100).toFixed(0)}%\n\n` +
-      `*Дата/время прогноза:* ${new Date().toLocaleString('ru-RU')}\n` +
-      `*ID эксперимента:* \`${experiment.experimentId}\`\n\n` +
+      `🔬 <b>Результаты прогнозирования</b>\n\n` +
+      `<b>Параметры синтеза:</b>\n${parameterDisplay}\n\n` +
+      `<b>Предсказанный размер частиц:</b> ${prediction.size.toFixed(1)} нм\n` +
+      `<b>Предсказанный PdI:</b> ${prediction.pdi.toFixed(3)}\n` +
+      `<b>Точность прогноза (R²):</b> ~${(prediction.sizeConfidence * 100).toFixed(0)}% / ${(prediction.pdiConfidence * 100).toFixed(0)}%\n\n` +
+      `<b>Дата/время прогноза:</b> ${new Date().toLocaleString('ru-RU')}\n` +
+      `<b>ID эксперимента:</b> <code>${experiment.experimentId}</code>\n\n` +
       `Чтобы добавить фактические результаты позже, используйте команду:\n` +
       `/add_result ${experiment.experimentId}`,
       {
         chat_id: chatId,
         message_id: processingMsg.message_id,
-        parse_mode: 'Markdown'
+        parse_mode: 'HTML' // поставил хтмл, т.к. мд требует слишком долгой обработки
       }
     );
     
@@ -163,14 +174,14 @@ function formatParametersForDisplay(parameters) {
   };
   
   return [
-    `• Конц. Eu: ${parameters.euConcentration} мМ/л`,
-    `• Конц. Фенантролина: ${parameters.phenanthrolineConcentration} мМ/л`,
-    `• Конц. Лиганда: ${parameters.ligandConcentration} мМ/л`,
-    `• Вид лиганда: ${ligandTypeMap[parameters.ligandType]} (${parameters.ligandType})`,
-    `• pH BSA: ${parameters.phBsa}`,
-    `• Объем добавления: ${parameters.additionVolume} мл`,
-    `• Время добавления: ${parameters.additionTime} мин`,
-    `• Скорость добавления: ${parameters.additionRate} мл/мин`
+    `Конц. Eu: ${parameters.euConcentration} мМ/л`,
+    `Конц. Фенантролина: ${parameters.phenanthrolineConcentration} мМ/л`,
+    `Конц. Лиганда: ${parameters.ligandConcentration} мМ/л`,
+    `Вид лиганда: ${ligandTypeMap[parameters.ligandType]} (${parameters.ligandType})`,
+    `pH BSA: ${parameters.phBsa}`,
+    `Объем добавления: ${parameters.additionVolume} мл`,
+    `Время добавления: ${parameters.additionTime} мин`,
+    `Скорость добавления: ${parameters.additionRate} мл/мин`
   ].join('\n');
 }
 

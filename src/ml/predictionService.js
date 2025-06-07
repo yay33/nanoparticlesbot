@@ -2,13 +2,14 @@ const logger = require('../utils/logger');
 const PredictionModel = require('../database/models/PredictionModel');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('node:child_process');
 
 /**
  * Make a prediction using the ML models
  * @param {Object} parameters - Input parameters for prediction
  * @returns {Promise<Object>} - Prediction results
  */
-async function makeModelPrediction(parameters) {
+/* async function makeModelPrediction(parameters) {
   try {
     logger.info(`Making prediction with parameters: ${JSON.stringify(parameters)}`);
     
@@ -36,6 +37,105 @@ async function makeModelPrediction(parameters) {
     throw new Error(`Failed to make prediction: ${error.message}`);
   }
 }
+ */
+
+/* async function makeModelPrediction(parameters) {
+  // parameters - массив строк вида ['1','1','3','2','11','500','30']
+  try {
+    const prediction = await new Promise((resolve, reject) => {
+      const py = spawn('python3', [
+        path.join(__dirname, 'predict.py'), 
+        JSON.stringify(parameters)
+      ]);
+  
+      let result = '';
+      let errorOutput = '';
+  
+      py.stdout.on('data', (data) => result += data.toString());
+      py.stderr.on('data', (data) => errorOutput += data.toString());
+  
+      py.on('close', (code) => {
+        if (code !== 0) {
+          logger.error(`Python error: ${errorOutput}`);
+          return reject(new Error(`Python script failed: ${errorOutput}`));
+        }
+        
+        try {
+          const prediction = JSON.parse(result);
+          resolve(prediction);
+        } catch (e) {
+          reject(new Error("Failed to parse prediction result"));
+        }
+      });
+    });
+    
+    // Добавляем исходные параметры в логи
+    logger.info(`Prediction for ${parameters}: ${JSON.stringify(prediction)}`);
+    return prediction;
+    
+  } catch (error) {
+    logger.error(`Prediction failed: ${error.message}`);
+    throw new Error(`Model error: ${error.message}`);
+  }
+} */
+
+  async function makeModelPrediction(parameters) {
+    return new Promise((resolve, reject) => {
+      /* const scriptPath = path.join(__dirname, '..', 'ml', 'predict.py'); */
+      const scriptPath = 'F:\\Projects\\attempt1\\src\\ml\\predict.py';
+      const py = spawn('python', [scriptPath, JSON.stringify(parameters)]);
+      console.log(scriptPath);
+      let output = '';
+      let errorOutput = '';
+      let timeoutHandle;
+  
+      // Таймаут 15 секунд на выполнение
+      timeoutHandle = setTimeout(() => {
+        py.kill('SIGKILL');
+        logger.error(`Prediction timeout for parameters: ${parameters}`);
+        reject(new Error('Prediction timeout'));
+      }, 15000);
+  
+      py.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+  
+      py.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+  
+      py.on('close', (code) => {
+        clearTimeout(timeoutHandle);
+        
+        if (code !== 0) {
+          const errorMessage = `Python script exited with code ${code}. Error: ${errorOutput}`;
+          logger.error(`Prediction failed: ${errorMessage}`);
+          return reject(new Error(errorMessage));
+        }
+  
+        try {
+          const result = JSON.parse(output);
+          
+          if (result.error) {
+            logger.error(`Model error: ${result.error}`);
+            return reject(new Error(result.error));
+          }
+  
+          logger.info(`Prediction success for [${parameters}]: ${JSON.stringify(result)}`);
+          resolve(result);
+        } catch (e) {
+          logger.error(`Failed to parse prediction output: ${e.message}`);
+          reject(new Error('Invalid prediction response'));
+        }
+      });
+  
+      py.on('error', (err) => {
+        clearTimeout(timeoutHandle);
+        logger.error(`Process error: ${err.message}`);
+        reject(err);
+      });
+    });
+  }
 
 /**
  * Validate a model file
@@ -72,7 +172,7 @@ async function validateModelFile(filePath) {
  * @param {Object} params - Input parameters
  * @returns {number} - Predicted size
  */
-function simulateSizePrediction(params) {
+/* function simulateSizePrediction(params) {
   // This is a simplified simulation formula - not accurate for real predictions
   // In a real implementation, this would use the actual ML model
   
@@ -92,14 +192,14 @@ function simulateSizePrediction(params) {
   
   // Ensure size is reasonable
   return Math.max(20, Math.min(500, size));
-}
+} */
 
 /**
  * Simulate PDI prediction with a formula based on parameters
  * @param {Object} params - Input parameters
  * @returns {number} - Predicted PDI
  */
-function simulatePdiPrediction(params) {
+/* function simulatePdiPrediction(params) {
   // This is a simplified simulation formula - not accurate for real predictions
   // In a real implementation, this would use the actual ML model
   
@@ -119,7 +219,7 @@ function simulatePdiPrediction(params) {
   
   // Ensure PDI is in reasonable range (0 to 1)
   return Math.max(0.05, Math.min(0.5, pdi));
-}
+} */
 
 module.exports = {
   makeModelPrediction,
