@@ -23,10 +23,10 @@ function validateParameters(paramArray) {
   const additionRate = paramArray.length === 8 ? parseFloat(paramArray[7]) : (additionVolume / additionTime);
   
   // Validate each parameter
-  if (isNaN(euConcentration) || euConcentration <= 0) {
+  if (isNaN(euConcentration) || euConcentration < 0) {
     return {
       valid: false,
-      error: 'Концентрация Eu должна быть положительным числом.'
+      error: 'Концентрация Eu должна быть неотрицательным числом.'
     };
   }
   
